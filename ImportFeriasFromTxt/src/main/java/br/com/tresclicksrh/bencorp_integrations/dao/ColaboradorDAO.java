@@ -51,22 +51,24 @@ public class ColaboradorDAO {
             int company_id = 2; //2= bencorp ou 1=Via
             String status = colaboradorDto.isPeriodoVencido()?"open":"";
 
-            insertVacation = "INSERT INTO vacations (id, uuid, acquisition_period_start, acquisition_period_end, concessive_period_start, " +
-                    "concessive_period_end, days_available, days_used, created_at, updated_at, target_user_id, " + //approved_by_manager_id, approved_by_rh_id, " +
-                    "created_by_id, solicitation_id, company_id,  status) " +
-                    "VALUES (nextval('vacations_id_seq'), gen_random_uuid(), '" +
-                    colaboradorDto.getInicioPeriodoAquisitivo() + "','" +
-                    colaboradorDto.getFimPeriodoAquisitivo() + "','" +
-                    TratamentoDeData.somaDias(colaboradorDto.getFimPeriodoAquisitivo(),1) + "','" +
-                    colaboradorDto.getDataLimiteParaGozo() + "'," +
-                    colaboradorDto.getQtdDiasRestantes() + "," +
-                    colaboradorDto.getQtdDiasGozados() + "," +
-                    "CURRENT_TIMESTAMP, CURRENT_TIMESTAMP," +
-                    colaboradorDto.getId() + "," +
-                    created_by_id + ", null, " + company_id + ",'" +
-                    status + "')";
+            if (id!=null) {
+                insertVacation = "INSERT INTO vacations (id, uuid, acquisition_period_start, acquisition_period_end, concessive_period_start, " +
+                        "concessive_period_end, days_available, days_used, created_at, updated_at, target_user_id, " + //approved_by_manager_id, approved_by_rh_id, " +
+                        "created_by_id, solicitation_id, company_id,  status) " +
+                        "VALUES (nextval('vacations_id_seq'), gen_random_uuid(), '" +
+                        colaboradorDto.getInicioPeriodoAquisitivo() + "','" +
+                        colaboradorDto.getFimPeriodoAquisitivo() + "','" +
+                        TratamentoDeData.somaDias(colaboradorDto.getFimPeriodoAquisitivo(), 1) + "','" +
+                        colaboradorDto.getDataLimiteParaGozo() + "'," +
+                        colaboradorDto.getQtdDiasRestantes() + "," +
+                        colaboradorDto.getQtdDiasGozados() + "," +
+                        "CURRENT_TIMESTAMP, CURRENT_TIMESTAMP," +
+                        colaboradorDto.getId() + "," +
+                        created_by_id + ", null, " + company_id + ",'" +
+                        status + "')";
 
-            st.executeUpdate(insertVacation);
+                st.executeUpdate(insertVacation);
+            }
 
             resultado.close();
             st.close();

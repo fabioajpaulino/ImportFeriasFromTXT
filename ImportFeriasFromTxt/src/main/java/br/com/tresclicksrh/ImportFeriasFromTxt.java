@@ -5,15 +5,38 @@ import br.com.tresclicksrh.bencorp_integrations.dto.ColaboradorDto;
 import br.com.tresclicksrh.bencorp_integrations.utils.TratamentoDeData;
 
 import java.io.*;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class ImportFeriasFromTxt {
 
-        private static final String fileName = "C:/Users/fabio/Downloads/20240829-BencorpFerias.txt";
+        private static final String dirName = "C:\\integracoes\\bencorp";
+        private static final String fileName = "ferias.txt";
 
         public static void main(String[] args) throws IOException {
+            Timer timer = new Timer();
+            TimerTask tarefa = new TimerTask() {
+                @Override
+                public void run() {
+                    try {
+                        integracaoFerias();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            };
 
+            // Agendar a tarefa para rodar a cada 10 minutos (600000 ms)
+            timer.scheduleAtFixedRate(tarefa, 0, 10 * 60 * 1000);
+        }
+
+        public static void integracaoFerias() throws IOException {
             try {
-                FileReader lerArquivo = new FileReader(ImportFeriasFromTxt.fileName);
+                FileReader lerArquivo = new FileReader(dirName + "\\" + fileName);
 
                 BufferedReader br = new BufferedReader(lerArquivo);
 
@@ -60,13 +83,33 @@ public class ImportFeriasFromTxt {
 
                 lerArquivo.close(); // fechando a leitura do arquivo
 
-
+                renomeiaArquivo(dirName, fileName);
 
             } catch (Exception e) {
                 e.printStackTrace();
 
             }
         }
+
+    private static void renomeiaArquivo(String diretorio, String nomeArquivo) {
+        File pasta = new File(diretorio);
+        File arquivo = new File(pasta, nomeArquivo);
+
+        if (arquivo.exists()) {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            String dataAtual = sdf.format(new Date());
+            File novoArquivo = new File(pasta, dataAtual + "-ferias.txt");
+
+            boolean sucesso = arquivo.renameTo(novoArquivo);
+            if (sucesso) {
+                System.out.println("Arquivo renomeado para: " + novoArquivo.getAbsolutePath());
+            } else {
+                System.out.println("Falha ao renomear o arquivo.");
+            }
+        } else {
+            System.out.println("O arquivo 'ferias.txt' não existe.");
+        }
+    }
 }
 
 
