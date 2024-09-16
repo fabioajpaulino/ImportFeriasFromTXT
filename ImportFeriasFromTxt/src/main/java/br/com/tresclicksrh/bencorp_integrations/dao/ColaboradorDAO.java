@@ -8,13 +8,16 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ColaboradorDAO {
+
+    private final static Logger logger = LoggerFactory.getLogger("br.com.tresclicksrh.bencorp_integrations");
 
     private Connection conn;;
 
     public ColaboradorDAO() {
-        System.out.println("Colaborador DAO");
         DbConnect dbConn = new DbConnect();
         conn = dbConn.getConn(conn);
     }
@@ -27,13 +30,14 @@ public class ColaboradorDAO {
         }
     }
 
-    public boolean save(ColaboradorDto colaboradorDto) {
+    public int save(ColaboradorDto colaboradorDto) {
 
         Statement st = null;
         ResultSet resultado = null;
 
         String selectUser = "SELECT id FROM users where lower(name) = '" + colaboradorDto.getNome().toLowerCase()+ "'";
         String insertVacation = null;
+        int retorno=0;
 
         try {
             st = conn.createStatement();
@@ -45,7 +49,7 @@ public class ColaboradorDAO {
                 colaboradorDto.setId(id);
             }
 
-            System.out.println(id==null?"ERRO Não encontrado: "+selectUser:"Encontrou o colaborador");
+            logger.error(id==null?"Não encontrado: "+selectUser:"");
 
             int created_by_id = 1; //para identificar que foi via integração usar sempre 1 rh@3clicksrh.com.br
             int company_id = 2; //2= bencorp ou 1=Via
@@ -53,8 +57,8 @@ public class ColaboradorDAO {
 
             if (id!=null) {
                 insertVacation = "INSERT INTO vacations (id, uuid, acquisition_period_start, acquisition_period_end, concessive_period_start, " +
-                        "concessive_period_end, days_available, days_used, created_at, updated_at, target_user_id, " + //approved_by_manager_id, approved_by_rh_id, " +
-                        "created_by_id, solicitation_id, company_id,  status) " +
+                        "concessive_period_end, days_available, days_used, created_at, updated_at, target_user_id, " + //solicitation_id, approved_by_manager_id, approved_by_rh_id, " +
+                        "created_by_id,  company_id,  status) " +
                         "VALUES (nextval('vacations_id_seq'), gen_random_uuid(), '" +
                         colaboradorDto.getInicioPeriodoAquisitivo() + "','" +
                         colaboradorDto.getFimPeriodoAquisitivo() + "','" +
@@ -64,20 +68,22 @@ public class ColaboradorDAO {
                         colaboradorDto.getQtdDiasGozados() + "," +
                         "CURRENT_TIMESTAMP, CURRENT_TIMESTAMP," +
                         colaboradorDto.getId() + "," +
-                        created_by_id + ", null, " + company_id + ",'" +
+                        created_by_id + "," + company_id + ",'" +
                         status + "')";
 
                 st.executeUpdate(insertVacation);
+                retorno++;
+
             }
 
             resultado.close();
             st.close();
-            return true;
 
         } catch (Exception ex) {
-            ex.printStackTrace();
-            System.out.println(insertVacation);
-            return false;
+
+            logger.error(ex.getMessage());
+            logger.error(insertVacation);
         }
+        return retorno;
     }
 }

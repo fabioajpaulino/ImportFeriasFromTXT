@@ -3,6 +3,8 @@ package br.com.tresclicksrh;
 import br.com.tresclicksrh.bencorp_integrations.dao.ColaboradorDAO;
 import br.com.tresclicksrh.bencorp_integrations.dto.ColaboradorDto;
 import br.com.tresclicksrh.bencorp_integrations.utils.TratamentoDeData;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.Timer;
@@ -14,16 +16,19 @@ import java.util.TimerTask;
 
 public class ImportFeriasFromTxt {
 
-        private static final String dirName = "C:\\integracoes\\bencorp";
-        private static final String fileName = "ferias.txt";
+        private static final String p_dirName = "C:\\integracoes\\bencorp";
+        private static final String p_fileName = "ferias.txt";
 
-        public static void main(String[] args) throws IOException {
+        private final static Logger logger1 = LoggerFactory.getLogger("br.com.tresclicksrh.bencorp_integrations");
+
+
+    public static void main(String[] args) throws IOException {
             Timer timer = new Timer();
             TimerTask tarefa = new TimerTask() {
                 @Override
                 public void run() {
                     try {
-                        integracaoFerias();
+                        integracaoFerias(args);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -34,15 +39,17 @@ public class ImportFeriasFromTxt {
             timer.scheduleAtFixedRate(tarefa, 0, 10 * 60 * 1000);
         }
 
-        public static void integracaoFerias() throws IOException {
+        public static void integracaoFerias(String[] args) throws IOException {
+            int contadorErro = 0;
+            int contadorOk = 0;
+
+            String dirName = args!=null && args.length>0 && args[0]!=null ? args[0] : p_dirName;
+            String fileName = args!=null && args.length>0  && args[0]!=null ? args[1] : p_fileName;
+
             try {
                 FileReader lerArquivo = new FileReader(dirName + "\\" + fileName);
 
                 BufferedReader br = new BufferedReader(lerArquivo);
-
-                //String linhaLida = br.readLine(); // readLine lê uma linha de texto completa
-                int intLido;
-                int contadorTab=0;
 
                 String linha = br.readLine();
                 String[] colunas = null;
@@ -56,7 +63,7 @@ public class ImportFeriasFromTxt {
                     colaboradorDto = new ColaboradorDto();
 
                     colunas = linha.split(Character.toString((char) 9));
-                    System.out.println("LINHA: "+ colunas.toString());
+                    //System.out.println("LINHA: " + colunas.toString());
 
                     colaboradorDto.setCodigo(colunas[1]);
                     colaboradorDto.setNome(colunas[2]);
@@ -73,7 +80,11 @@ public class ImportFeriasFromTxt {
                     colaboradorDto.setAbonoPecuniario(false);
                     colaboradorDto.setAdiantamento13Salario(false);
 
-                    dao.save(colaboradorDto);
+                    if (dao.save(colaboradorDto)==1) {
+                        contadorOk++;
+                    } else {
+                        contadorErro++;
+                    }
 
                     linha = br.readLine();
                 }
@@ -86,9 +97,11 @@ public class ImportFeriasFromTxt {
                 renomeiaArquivo(dirName, fileName);
 
             } catch (Exception e) {
-                e.printStackTrace();
-
+                logger1.error(e.getMessage());
             }
+            logger1.error("Erros:" + Integer.toString(contadorErro));
+            logger1.error("OK:" + Integer.toString(contadorOk));
+
         }
 
     private static void renomeiaArquivo(String diretorio, String nomeArquivo) {
@@ -102,12 +115,12 @@ public class ImportFeriasFromTxt {
 
             boolean sucesso = arquivo.renameTo(novoArquivo);
             if (sucesso) {
-                System.out.println("Arquivo renomeado para: " + novoArquivo.getAbsolutePath());
+                logger1.error("Arquivo renomeado para: " + novoArquivo.getAbsolutePath());
             } else {
-                System.out.println("Falha ao renomear o arquivo.");
+                logger1.error("Falha ao renomear o arquivo.");
             }
         } else {
-            System.out.println("O arquivo 'ferias.txt' não existe.");
+            logger1.error("O arquivo 'ferias.txt' não existe.");
         }
     }
 }

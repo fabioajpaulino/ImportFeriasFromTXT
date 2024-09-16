@@ -21,7 +21,7 @@ public class DbConnect {
             String username = "postgres";        //nome de um usuário de seu BD
             String password = "3clicksrhdb";      //sua senha de acesso
 
-            System.out.println("[DbConnect] -> " + url + "," + username + "," + password);
+            //System.out.println("[DbConnect] -> " + url + "," + username + "," + password);
 
             Class.forName(driverName);
             connection = DriverManager.getConnection(url, username, password);
@@ -32,14 +32,14 @@ public class DbConnect {
                 status = ("STATUS--->Não foi possivel realizar conexão");
             }
 
-            System.out.println("[DbConnect] -> Conn Status: " + status);
+            //System.out.println("[DbConnect] -> Conn Status: " + status);
             return connection;
 
         } catch (ClassNotFoundException e) {  //Driver não encontrado
-            System.out.println("[DbConnect] -> O driver especificado nao foi encontrado.");
+           // System.out.println("[DbConnect] -> O driver especificado nao foi encontrado.");
             return null;
         } catch (SQLException e) {
-            System.out.println("[DbConnect] -> Nao foi possível conectar ao Banco de Dados.");
+            //System.out.println("[DbConnect] -> Nao foi possível conectar ao Banco de Dados.");
             return null;
         }
 
