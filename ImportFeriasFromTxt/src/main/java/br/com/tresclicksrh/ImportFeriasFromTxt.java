@@ -7,6 +7,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.text.SimpleDateFormat;
@@ -18,6 +20,8 @@ public class ImportFeriasFromTxt {
 
         private static final String p_dirName = "C:\\integracoes\\bencorp";
         private static final String p_fileName = "ferias.txt";
+        private static final Integer intIgnorarDiasPendenteNaIntegracao = 3;
+        private static final Integer intQtdMinutos = 5;
 
         private final static Logger logger1 = LoggerFactory.getLogger("br.com.tresclicksrh.bencorp_integrations");
 
@@ -36,7 +40,7 @@ public class ImportFeriasFromTxt {
             };
 
             // Agendar a tarefa para rodar a cada 10 minutos (600000 ms)
-            timer.scheduleAtFixedRate(tarefa, 0, 10 * 60 * 1000);
+            timer.scheduleAtFixedRate(tarefa, 0, intQtdMinutos * 60 * 1000);
         }
 
         public static void integracaoFerias(String[] args) throws IOException {
@@ -60,6 +64,8 @@ public class ImportFeriasFromTxt {
 
                 while (linha != null) {
 
+                    if (contadorErro==0 && contadorOk==0) dao.delete(intIgnorarDiasPendenteNaIntegracao);
+
                     colaboradorDto = new ColaboradorDto();
 
                     colunas = linha.split(Character.toString((char) 9));
@@ -80,7 +86,7 @@ public class ImportFeriasFromTxt {
                     colaboradorDto.setAbonoPecuniario(false);
                     colaboradorDto.setAdiantamento13Salario(false);
 
-                    if (dao.save(colaboradorDto)==1) {
+                    if (dao.save(colaboradorDto,intIgnorarDiasPendenteNaIntegracao)==1) {
                         contadorOk++;
                     } else {
                         contadorErro++;
@@ -99,6 +105,10 @@ public class ImportFeriasFromTxt {
             } catch (Exception e) {
                 logger1.error(e.getMessage());
             }
+
+            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+            LocalDateTime now = LocalDateTime.now();
+            logger1.error("Execução: " + dtf.format(now));
             logger1.error("Erros:" + Integer.toString(contadorErro));
             logger1.error("OK:" + Integer.toString(contadorOk));
 

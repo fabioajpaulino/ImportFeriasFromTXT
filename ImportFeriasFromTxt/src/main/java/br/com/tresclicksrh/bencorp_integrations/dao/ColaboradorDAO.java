@@ -30,28 +30,54 @@ public class ColaboradorDAO {
         }
     }
 
-    public int save(ColaboradorDto colaboradorDto) {
+    public int delete(Integer intIgnorarDiasPendenteNaIntegracao) {
+        String deleteSQL= "delete vacations v where v.updated_at < (current_date - integer '"+ intIgnorarDiasPendenteNaIntegracao +"')";
+        Statement st = null;
+        int retorno=0;
+
+        try {
+            st = conn.createStatement();
+            retorno = st.executeUpdate(deleteSQL);
+            st.close();
+
+        } catch (Exception ex) {
+
+            logger.error(ex.getMessage());
+            logger.error(deleteSQL);
+        }
+        return retorno;
+    }
+
+    public int save(ColaboradorDto colaboradorDto, Integer intIgnorarDiasPendenteNaIntegracao) {
 
         Statement st = null;
         ResultSet resultado = null;
 
-        String selectUser = "SELECT id FROM users where lower(name) = '" + colaboradorDto.getNome().toLowerCase()+ "'";
+
+        String selectUserSQL = "SELECT u.id AS user_id " +
+                "FROM users u " +
+                "RIGHT JOIN vacations v ON u.id = v.target_user_id " +
+                "AND v.updated_at < (current_date - interval '"+intIgnorarDiasPendenteNaIntegracao+" days') " +
+                "WHERE UPPER(u.name) = UPPER('" + colaboradorDto.getNome().toUpperCase()+ "') GROUP BY u.id";
+
+        //String selectUserSQL = "SELECT id FROM users where upper(name) = '" + colaboradorDto.getNome().toUpperCase()+ "'";
+
         String insertVacation = null;
         int retorno=0;
 
         try {
             st = conn.createStatement();
 
-            resultado = st.executeQuery(selectUser);
+            resultado = st.executeQuery(selectUserSQL);
             Integer id = null;
             while (resultado.next()) {
-                id = resultado.getInt("id");
+                id = resultado.getInt("user_id");
                 colaboradorDto.setId(id);
             }
 
-            logger.error(id==null?"Não encontrado: "+selectUser:"");
+            logger.error(id==null?"Não encontrado ou possui solicitação de férias cadastrada nos últimos " + intIgnorarDiasPendenteNaIntegracao + " dias: " + selectUserSQL : "OK - inserindo período aquisitivo.");
 
-            int created_by_id = 1; //para identificar que foi via integração usar sempre 1 rh@3clicksrh.com.br
+            int created_by_id = 1; //para identificar que foi através da integração usar sempre 1 rh@3clicksrh.com.br
             int company_id = 2; //2= bencorp ou 1=Via
             String status = colaboradorDto.isPeriodoVencido()?"open":"";
 
@@ -66,7 +92,8 @@ public class ColaboradorDAO {
                         colaboradorDto.getDataLimiteParaGozo() + "'," +
                         colaboradorDto.getQtdDiasRestantes() + "," +
                         colaboradorDto.getQtdDiasGozados() + "," +
-                        "CURRENT_TIMESTAMP, CURRENT_TIMESTAMP," +
+                        "(current_date - integer '"+(intIgnorarDiasPendenteNaIntegracao+1)+"'), " +
+                        "(current_date - integer '"+(intIgnorarDiasPendenteNaIntegracao+1)+"')," +
                         colaboradorDto.getId() + "," +
                         created_by_id + "," + company_id + ",'" +
                         status + "')";
