@@ -20,7 +20,7 @@ public class ImportFeriasFromTxt {
 
         private static final String p_dirName = "C:\\integracoes\\bencorp";
         private static final String p_fileName = "ferias.txt";
-        private static final Integer intIgnorarDiasPendenteNaIntegracao = 3;
+        private static final Integer intIgnorarDiasPendenteNaIntegracao = 0;
         private static final Integer intQtdMinutos = 5;
 
         private final static Logger logger1 = LoggerFactory.getLogger("br.com.tresclicksrh.bencorp_integrations");

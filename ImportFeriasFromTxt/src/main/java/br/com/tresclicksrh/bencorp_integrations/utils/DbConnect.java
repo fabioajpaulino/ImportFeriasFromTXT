@@ -15,8 +15,14 @@ public class DbConnect {
         try {
             String driverName = "org.postgresql.Driver";
 
-            String serverName = "database-development-instance-1.cjce80wwgnwp.us-east-1.rds.amazonaws.com";    //caminho do servidor do BD
-            String mydatabase = "three_clicks_rh_api_development";        //nome do seu banco de dados
+            //caminho do servidor do BD
+            //String serverName = "database-development-instance-1.cjce80wwgnwp.us-east-1.rds.amazonaws.com";
+            String serverName = "database-production.cluster-cjce80wwgnwp.us-east-1.rds.amazonaws.com";
+
+            //nome do seu banco de dados
+            //String mydatabase = "three_clicks_rh_api_development";
+            String mydatabase = "three_clicks_rh_api_production";
+
             String url = "jdbc:postgresql://" + serverName + "/" + mydatabase;
             String username = "postgres";        //nome de um usuário de seu BD
             String password = "3clicksrhdb";      //sua senha de acesso

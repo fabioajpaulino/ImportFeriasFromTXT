@@ -31,7 +31,7 @@ public class ColaboradorDAO {
     }
 
     public int delete(Integer intIgnorarDiasPendenteNaIntegracao) {
-        String deleteSQL= "delete vacations v where v.updated_at < (current_date - integer '"+ intIgnorarDiasPendenteNaIntegracao +"')";
+        String deleteSQL= "delete from vacations v where v.updated_at < (current_date - integer '"+ intIgnorarDiasPendenteNaIntegracao +"')";
         Statement st = null;
         int retorno=0;
 
@@ -43,7 +43,7 @@ public class ColaboradorDAO {
         } catch (Exception ex) {
 
             logger.error(ex.getMessage());
-            logger.error(deleteSQL);
+            logger.error("ERRO:" + deleteSQL);
         }
         return retorno;
     }
@@ -53,7 +53,7 @@ public class ColaboradorDAO {
         Statement st = null;
         ResultSet resultado = null;
 
-
+        // verifica se o colaborador atual possui férias cadastradas pendentes de integração (definido pelo prazo na variável intIgnorarDiasPendenteNaIntegracao)
         String selectUserSQL = "SELECT u.id AS user_id " +
                 "FROM users u " +
                 "RIGHT JOIN vacations v ON u.id = v.target_user_id " +
@@ -68,20 +68,37 @@ public class ColaboradorDAO {
         try {
             st = conn.createStatement();
 
-            resultado = st.executeQuery(selectUserSQL);
+            //verifica se o colaborador atual possui períodos de férias, ou seja, se já está na vacations
+            String qtdRegistrosSQL = "SELECT count(u.id) AS userFeriasCadastrada " +
+                                    "FROM users u JOIN vacations v ON u.id = v.target_user_id " +
+                                    "WHERE UPPER(u.name) = UPPER('" + colaboradorDto.getNome().toUpperCase()+ "')";
+            resultado = st.executeQuery(qtdRegistrosSQL);
+            resultado.next();
             Integer id = null;
+
+            if (resultado.getInt("userFeriasCadastrada")==0) {
+
+                logger.error("Não existia vacations cadastrada: " + qtdRegistrosSQL);
+
+                selectUserSQL = "SELECT u.id AS user_id FROM users u " +
+                                "WHERE UPPER(u.name) = UPPER('" + colaboradorDto.getNome().toUpperCase()+ "')";
+            }
+
+            resultado = st.executeQuery(selectUserSQL);
+
             while (resultado.next()) {
                 id = resultado.getInt("user_id");
                 colaboradorDto.setId(id);
             }
 
-            logger.error(id==null?"Não encontrado ou possui solicitação de férias cadastrada nos últimos " + intIgnorarDiasPendenteNaIntegracao + " dias: " + selectUserSQL : "OK - inserindo período aquisitivo.");
+            if (id==null) {
+                logger.error("Não encontrado ou férias atualizada aguardando integração com a folha nos últimos " + intIgnorarDiasPendenteNaIntegracao + " dias: " + selectUserSQL);
+            } else {
 
-            int created_by_id = 1; //para identificar que foi através da integração usar sempre 1 rh@3clicksrh.com.br
-            int company_id = 2; //2= bencorp ou 1=Via
-            String status = colaboradorDto.isPeriodoVencido()?"open":"";
+                int created_by_id = 1; //para identificar que foi através da integração usar sempre 1 rh@3clicksrh.com.br
+                int company_id = 2; //2= bencorp ou 1=Via
+                String status = colaboradorDto.isPeriodoVencido()?"open":"";
 
-            if (id!=null) {
                 insertVacation = "INSERT INTO vacations (id, uuid, acquisition_period_start, acquisition_period_end, concessive_period_start, " +
                         "concessive_period_end, days_available, days_used, created_at, updated_at, target_user_id, " + //solicitation_id, approved_by_manager_id, approved_by_rh_id, " +
                         "created_by_id,  company_id,  status) " +
