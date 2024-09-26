@@ -1,7 +1,7 @@
 package br.com.tresclicksrh;
 
 import br.com.tresclicksrh.bencorp_integrations.dao.ColaboradorDAO;
-import br.com.tresclicksrh.bencorp_integrations.dto.ColaboradorDto;
+import br.com.tresclicksrh.bencorp_integrations.dto.ColaboradorVacationDto;
 import br.com.tresclicksrh.bencorp_integrations.utils.TratamentoDeData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,8 +13,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Timer;
-import java.util.TimerTask;
 
 public class ImportFeriasFromTxt {
 
@@ -25,6 +23,8 @@ public class ImportFeriasFromTxt {
 
         private final static Logger logger1 = LoggerFactory.getLogger("br.com.tresclicksrh.bencorp_integrations");
 
+        private final static int created_by_id = 1; //para identificar que foi através da integração usar sempre 1 rh@3clicksrh.com.br
+        private final static int company_id = 2; //2= bencorp ou 1=Via
 
     public static void main(String[] args) throws IOException {
             Timer timer = new Timer();
@@ -58,35 +58,38 @@ public class ImportFeriasFromTxt {
                 String linha = br.readLine();
                 String[] colunas = null;
 
-                ColaboradorDto colaboradorDto = null;
+                ColaboradorVacationDto colaboradorVacationDto = null;
 
                 ColaboradorDAO dao = new ColaboradorDAO();
 
                 while (linha != null) {
 
-                    if (contadorErro==0 && contadorOk==0) dao.delete(intIgnorarDiasPendenteNaIntegracao);
+                    //if (contadorErro==0 && contadorOk==0) dao.delete(intIgnorarDiasPendenteNaIntegracao, company_id);
 
-                    colaboradorDto = new ColaboradorDto();
+                    colaboradorVacationDto = new ColaboradorVacationDto();
 
                     colunas = linha.split(Character.toString((char) 9));
                     //System.out.println("LINHA: " + colunas.toString());
 
-                    colaboradorDto.setCodigo(colunas[1]);
-                    colaboradorDto.setNome(colunas[2]);
-                    colaboradorDto.setDataAdmissao(TratamentoDeData.parseDate(colunas[3]));
-                    colaboradorDto.setDataLimiteParaGozo(TratamentoDeData.parseDate(colunas[12]));
-                    colaboradorDto.setInicioPeriodoAquisitivo(TratamentoDeData.parseDate(colunas[15]));
-                    colaboradorDto.setFimPeriodoAquisitivo(TratamentoDeData.parseDate(colunas[16]));
-                    colaboradorDto.setPeriodoVencido(Integer.parseInt(colunas[19]));
-                    colaboradorDto.setQtdAvosDeFeriasDoPeriodoAquisitivo(colunas[20].equals("0") ? 12 : Integer.parseInt(colunas[20].split(",")[0]));
-                    colaboradorDto.setQtdDiasGozados(Integer.parseInt(colunas[23].split(",")[0]));
-                    colaboradorDto.setQtdDiasRestantes(Integer.parseInt(colunas[35].split(",")[0]));
-                    colaboradorDto.setQtdFaltasNoPeriodo(Integer.parseInt(colunas[46].split(",")[0]));
+                    colaboradorVacationDto.setCodigo(colunas[1]);
+                    colaboradorVacationDto.setNome(colunas[2]);
+                    colaboradorVacationDto.setDataAdmissao(TratamentoDeData.parseDate(colunas[3]));
+                    colaboradorVacationDto.setDataLimiteParaGozo(TratamentoDeData.parseDate(colunas[12]));
+                    colaboradorVacationDto.setInicioPeriodoAquisitivo(TratamentoDeData.parseDate(colunas[15]));
+                    colaboradorVacationDto.setFimPeriodoAquisitivo(TratamentoDeData.parseDate(colunas[16]));
+                    colaboradorVacationDto.setPeriodoVencido(Integer.parseInt(colunas[19]));
+                    colaboradorVacationDto.setQtdAvosDeFeriasDoPeriodoAquisitivo(colunas[20].equals("0") ? 12 : Integer.parseInt(colunas[20].split(",")[0]));
+                    colaboradorVacationDto.setQtdDiasGozados(Integer.parseInt(colunas[23].split(",")[0]));
+                    colaboradorVacationDto.setQtdDiasRestantes(Integer.parseInt(colunas[35].split(",")[0]));
+                    colaboradorVacationDto.setQtdFaltasNoPeriodo(Integer.parseInt(colunas[46].split(",")[0]));
 
-                    colaboradorDto.setAbonoPecuniario(false);
-                    colaboradorDto.setAdiantamento13Salario(false);
+                    colaboradorVacationDto.setAbonoPecuniario(false);
+                    colaboradorVacationDto.setAdiantamento13Salario(false);
 
-                    if (dao.save(colaboradorDto,intIgnorarDiasPendenteNaIntegracao)==1) {
+                    colaboradorVacationDto.setCompany_id(company_id);
+                    colaboradorVacationDto.setCreated_by_id(created_by_id);
+
+                    if (dao.saveUpdate(colaboradorVacationDto,intIgnorarDiasPendenteNaIntegracao)==1) {
                         contadorOk++;
                     } else {
                         contadorErro++;
