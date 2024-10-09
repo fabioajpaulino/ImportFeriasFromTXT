@@ -84,9 +84,14 @@ public class ColaboradorDAO {
 
             if (qtdLinhasAfetadas==0) {
 
-                String sqlBuscaVacation = "SELECT id FROM vacations " +
+                /*String sqlBuscaVacation = "SELECT id FROM vacations " +
                                         " WHERE target_user_id = " + colaboradorVacationDto.getTargetUserId() +
                                         " AND acquisition_period_start = '" + colaboradorVacationDto.getInicioPeriodoAquisitivo() + "'";
+
+                 */
+                String sqlBuscaVacation = "SELECT vi.id FROM vacations v, vacation_items vi"+
+                                            " WHERE v.id = vi.vacation_id AND target_user_id = " + colaboradorVacationDto.getTargetUserId() +
+                                            " AND vi.updated_at < (current_date - integer '" + (intIgnorarDiasPendenteNaIntegracao) + "') ";
 
                 logger.info(sqlBuscaVacation);
                 resultado = st.executeQuery(sqlBuscaVacation);
