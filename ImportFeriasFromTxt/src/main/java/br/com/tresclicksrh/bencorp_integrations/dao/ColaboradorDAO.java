@@ -19,9 +19,10 @@ public class ColaboradorDAO {
 
     private Connection conn;;
 
-    public ColaboradorDAO() {
+
+    public ColaboradorDAO(String ambiente) {
         DbConnect dbConn = new DbConnect();
-        conn = dbConn.getConn(conn);
+        conn = dbConn.getConn(conn, ambiente);
     }
 
     public void close() {
@@ -60,73 +61,90 @@ public class ColaboradorDAO {
         Statement st = null;
         ResultSet resultado = null;
         Integer userId = null;
+        int qtdLinhasAfetadas = 0;
+        String sqlBuscaVacation = "Não executou SQL de busca vacation itens.";
 
         String selectUserSQL = "SELECT u.id AS user_id FROM users u " +
                 "WHERE UPPER(u.name) = UPPER('" + colaboradorVacationDto.getNome().toUpperCase()+ "')";
 
         try {
             st = conn.createStatement();
+            //busca colaborador atual
             resultado = st.executeQuery(selectUserSQL);
 
             while (resultado.next()) {
+                //seta o user_id caso encontre o colaborador atual
                 userId = resultado.getInt("user_id");
                 colaboradorVacationDto.setTargetUserId(userId);
             }
 
-            sqlUpdate = "UPDATE vacations " +
-                    " SET days_available= " + colaboradorVacationDto.getQtdDiasRestantes() + "," +
-                    " days_used= " + colaboradorVacationDto.getQtdDiasGozados() +
-                    " WHERE target_user_id = " + colaboradorVacationDto.getTargetUserId() +
-                    " AND updated_at < (current_date - interval '"+intIgnorarDiasPendenteNaIntegracao+" days') " +
-                    " AND acquisition_period_start = '" + colaboradorVacationDto.getDataAdmissao().format(dtf) + "' ";
+            //cria o update de vacations se o usuário/colaborador existir
+            if (userId != null) {
+                sqlUpdate = "UPDATE vacations " +
+                        " SET days_available= " + colaboradorVacationDto.getQtdDiasRestantes() + "," +
+                        " days_used= " + colaboradorVacationDto.getQtdDiasGozados() + "," +
+                        " updated_at= CURRENT_TIMESTAMP " +
+                        " WHERE target_user_id = " + colaboradorVacationDto.getTargetUserId() +
+                        //" AND updated_at < (current_date - interval '"+intIgnorarDiasPendenteNaIntegracao+" days') " +
+                        " AND acquisition_period_start = '" + colaboradorVacationDto.getInicioPeriodoAquisitivo().format(dtf) + "' " +
+                        " AND id NOT IN (SELECT vi.vacation_id " +
+                        "FROM vacation_items vi " +
+                        "WHERE vi.updated_at < (current_date - integer '" + intIgnorarDiasPendenteNaIntegracao + "'))";
 
-            int qtdLinhasAfetadas = st.executeUpdate(sqlUpdate);
+                //tenta fazer o update
+                qtdLinhasAfetadas = st.executeUpdate(sqlUpdate);
 
-            if (qtdLinhasAfetadas==0) {
+                // verifica se atualizou no update, se não atualizou entra no if para incluir o novo período
+                if (qtdLinhasAfetadas == 0) {
 
-                /*String sqlBuscaVacation = "SELECT id FROM vacations " +
-                                        " WHERE target_user_id = " + colaboradorVacationDto.getTargetUserId() +
-                                        " AND acquisition_period_start = '" + colaboradorVacationDto.getInicioPeriodoAquisitivo() + "'";
+                    //verifica se existe solicitação de férias cadastradas para o usuário dentro do período pendente de integração
+                    sqlBuscaVacation = "SELECT vi.vacation_id " +
+                            "FROM vacation_items vi LEFT JOIN vacations v ON vi.vacation_id =v.id " +
+                            " WHERE v.target_user_id = " + colaboradorVacationDto.getTargetUserId() +
+                            " AND vi.updated_at < (current_date - integer '" + (intIgnorarDiasPendenteNaIntegracao) + "') ";
 
-                 */
-                String sqlBuscaVacation = "SELECT vi.id FROM vacations v, vacation_items vi"+
-                                            " WHERE v.id = vi.vacation_id AND target_user_id = " + colaboradorVacationDto.getTargetUserId() +
-                                            " AND vi.updated_at < (current_date - integer '" + (intIgnorarDiasPendenteNaIntegracao) + "') ";
+                    resultado = st.executeQuery(sqlBuscaVacation);
 
-                logger.info(sqlBuscaVacation);
-                resultado = st.executeQuery(sqlBuscaVacation);
-                if (resultado.next()) {
-                    logger.info("Colaborador com férias cadastradas dentro de " + intIgnorarDiasPendenteNaIntegracao + " dias.");
+                    logger.info(sqlBuscaVacation);
+
+                    if (resultado.next()) {
+                        //não faz nada se existirem férias cadastradas dina não integradas pelos sistemas
+                        logger.info("Colaborador com férias cadastradas dentro de " + intIgnorarDiasPendenteNaIntegracao + " dias.");
+
+                    } else {
+
+                        //caso não tenha férias cadastradas insere o novo período de férias
+                        String status = colaboradorVacationDto.isPeriodoVencido() ? "open" : "";
+
+                        String insertVacation = "INSERT INTO vacations (id, uuid, acquisition_period_start, acquisition_period_end, concessive_period_start, " +
+                                "concessive_period_end, days_available, days_used, created_at, updated_at, target_user_id, " + //solicitation_id, approved_by_manager_id, approved_by_rh_id, " +
+                                "created_by_id,  company_id,  status) " +
+                                "VALUES (nextval('vacations_id_seq'), gen_random_uuid(), '" +
+                                colaboradorVacationDto.getInicioPeriodoAquisitivo() + "','" +
+                                colaboradorVacationDto.getFimPeriodoAquisitivo() + "','" +
+                                TratamentoDeData.somaDias(colaboradorVacationDto.getFimPeriodoAquisitivo(), 1) + "','" +
+                                colaboradorVacationDto.getDataLimiteParaGozo() + "'," +
+                                colaboradorVacationDto.getQtdDiasRestantes() + "," +
+                                colaboradorVacationDto.getQtdDiasGozados() + "," +
+                                " current_date , current_date ," +
+                                colaboradorVacationDto.getTargetUserId() + "," +
+                                colaboradorVacationDto.getCreated_by_id() + "," + colaboradorVacationDto.getCompany_id() + ",'" +
+                                status + "')";
+
+                        st.executeUpdate(insertVacation);
+                        logger.info("INSERT OK->" + insertVacation);
+                    }
                 } else {
-
-                    String status = colaboradorVacationDto.isPeriodoVencido() ? "open" : "";
-
-                    String insertVacation = "INSERT INTO vacations (id, uuid, acquisition_period_start, acquisition_period_end, concessive_period_start, " +
-                            "concessive_period_end, days_available, days_used, created_at, updated_at, target_user_id, " + //solicitation_id, approved_by_manager_id, approved_by_rh_id, " +
-                            "created_by_id,  company_id,  status) " +
-                            "VALUES (nextval('vacations_id_seq'), gen_random_uuid(), '" +
-                            colaboradorVacationDto.getInicioPeriodoAquisitivo() + "','" +
-                            colaboradorVacationDto.getFimPeriodoAquisitivo() + "','" +
-                            TratamentoDeData.somaDias(colaboradorVacationDto.getFimPeriodoAquisitivo(), 1) + "','" +
-                            colaboradorVacationDto.getDataLimiteParaGozo() + "'," +
-                            colaboradorVacationDto.getQtdDiasRestantes() + "," +
-                            colaboradorVacationDto.getQtdDiasGozados() + "," +
-                            "(current_date - integer '" + (intIgnorarDiasPendenteNaIntegracao + 1) + "'), " +
-                            "(current_date - integer '" + (intIgnorarDiasPendenteNaIntegracao + 1) + "')," +
-                            colaboradorVacationDto.getTargetUserId() + "," +
-                            colaboradorVacationDto.getCreated_by_id() + "," + colaboradorVacationDto.getCompany_id() + ",'" +
-                            status + "')";
-
-                    st.executeUpdate(insertVacation);
-                    logger.info("INSERT OK->" + insertVacation);
+                    logger.info("UPDATE OK->" + sqlUpdate);
                 }
+                retorno++;
             } else {
-                logger.info("UPDATE OK->" + sqlUpdate);
+                logger.info("USER Não EXISTE -> " + selectUserSQL);
             }
 
             resultado.close();
             st.close();
-            retorno++;
+
 
         } catch (Exception ex) {
 

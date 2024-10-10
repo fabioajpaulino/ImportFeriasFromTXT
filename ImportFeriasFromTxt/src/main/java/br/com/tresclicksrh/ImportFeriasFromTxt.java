@@ -48,7 +48,9 @@ public class ImportFeriasFromTxt {
             int contadorOk = 0;
 
             String dirName = args!=null && args.length>0 && args[0]!=null ? args[0] : p_dirName;
-            String fileName = args!=null && args.length>0  && args[0]!=null ? args[1] : p_fileName;
+            String fileName = args!=null && args.length>0  && args[1]!=null ? args[1] : p_fileName;
+
+            String ambiente = args!=null && args.length>0 && args[2]!=null ? args[2] : "DEV";
 
             try {
                 FileReader lerArquivo = new FileReader(dirName + "\\" + fileName);
@@ -60,7 +62,7 @@ public class ImportFeriasFromTxt {
 
                 ColaboradorVacationDto colaboradorVacationDto = null;
 
-                ColaboradorDAO dao = new ColaboradorDAO();
+                ColaboradorDAO dao = new ColaboradorDAO(ambiente);
 
                 while (linha != null) {
 

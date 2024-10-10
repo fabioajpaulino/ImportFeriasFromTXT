@@ -10,22 +10,20 @@ public class DbConnect {
     public DbConnect() {
     }
 
-    public Connection getConn(Connection connection) {
+    public Connection getConn(Connection connection, String ambiente) {
 
         try {
             String driverName = "org.postgresql.Driver";
 
-            //caminho do servidor do BD
             //DEV
-            //String serverName = "database-development-instance-1.cjce80wwgnwp.us-east-1.rds.amazonaws.com";
-            //PROD
-            String serverName = "database-production.cluster-cjce80wwgnwp.us-east-1.rds.amazonaws.com";
+            String serverName = "database-development-instance-1.cjce80wwgnwp.us-east-1.rds.amazonaws.com";
+            String mydatabase = "three_clicks_rh_api_development";
 
-            //nome do seu banco de dados
-            //DEV
-            //String mydatabase = "three_clicks_rh_api_development";
             //PROD
-            String mydatabase = "three_clicks_rh_api_production";
+            if (ambiente.toLowerCase().equals("prod")) {
+                serverName = "database-production.cluster-cjce80wwgnwp.us-east-1.rds.amazonaws.com";
+                mydatabase = "three_clicks_rh_api_production";
+            }
 
             String url = "jdbc:postgresql://" + serverName + "/" + mydatabase;
             String username = "postgres";        //nome de um usuário de seu BD
