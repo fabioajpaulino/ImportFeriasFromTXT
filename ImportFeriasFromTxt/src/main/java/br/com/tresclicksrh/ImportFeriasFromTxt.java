@@ -2,11 +2,13 @@ package br.com.tresclicksrh;
 
 import br.com.tresclicksrh.bencorp_integrations.dao.ColaboradorDAO;
 import br.com.tresclicksrh.bencorp_integrations.dto.ColaboradorVacationDto;
+import br.com.tresclicksrh.bencorp_integrations.utils.DbConnect;
 import br.com.tresclicksrh.bencorp_integrations.utils.TratamentoDeData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.sql.Connection;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Timer;
@@ -18,7 +20,7 @@ public class ImportFeriasFromTxt {
 
         private static final String p_dirName = "C:\\integracoes\\bencorp";
         private static final String p_fileName = "ferias.txt";
-        private static final Integer intIgnorarDiasPendenteNaIntegracao = 3;
+        private static final Integer intIgnorarDiasPendenteNaIntegracao = 20;
         private static final Integer intQtdMinutos = 5;
 
         private final static Logger logger1 = LoggerFactory.getLogger("br.com.tresclicksrh.bencorp_integrations");
@@ -47,10 +49,15 @@ public class ImportFeriasFromTxt {
             int contadorErro = 0;
             int contadorOk = 0;
 
+            /*
             String dirName = args!=null && args.length>0 && args[0]!=null ? args[0] : p_dirName;
             String fileName = args!=null && args.length>0  && args[1]!=null ? args[1] : p_fileName;
+             */
+            String dirName =  p_dirName;
+            String fileName =  p_fileName;
 
-            String ambiente = args!=null && args.length>0 && args[2]!=null ? args[2] : "DEV";
+            String ambiente = args!=null && args.length>0 && args[0]!=null ? args[0] : "DEV";
+            logger1.error("Ambiente: " + ambiente);
 
             try {
                 FileReader lerArquivo = new FileReader(dirName + "\\" + fileName);
@@ -62,7 +69,8 @@ public class ImportFeriasFromTxt {
 
                 ColaboradorVacationDto colaboradorVacationDto = null;
 
-                ColaboradorDAO dao = new ColaboradorDAO(ambiente);
+                DbConnect dbConn = new DbConnect();
+                ColaboradorDAO dao = new ColaboradorDAO( dbConn.getConn(ambiente) );
 
                 while (linha != null) {
 

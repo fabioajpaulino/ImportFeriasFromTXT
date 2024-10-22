@@ -20,9 +20,10 @@ public class ColaboradorDAO {
     private Connection conn;;
 
 
-    public ColaboradorDAO(String ambiente) {
-        DbConnect dbConn = new DbConnect();
-        conn = dbConn.getConn(conn, ambiente);
+    public ColaboradorDAO(/*String ambiente,*/ Connection p_conn) {
+        //DbConnect dbConn = new DbConnect();
+        //conn = dbConn.getConn(conn, ambiente);
+        conn = p_conn;
     }
 
     public void close() {
@@ -78,7 +79,7 @@ public class ColaboradorDAO {
                 colaboradorVacationDto.setTargetUserId(userId);
             }
 
-            //cria o update de vacations se o usuário/colaborador existir
+            //cria o update de vacations se o usuário/colaborador existir e não exista vacation item dentro dos ultimos 9999 dias
             if (userId != null) {
                 sqlUpdate = "UPDATE vacations " +
                         " SET days_available= " + colaboradorVacationDto.getQtdDiasRestantes() + "," +
@@ -88,8 +89,8 @@ public class ColaboradorDAO {
                         //" AND updated_at < (current_date - interval '"+intIgnorarDiasPendenteNaIntegracao+" days') " +
                         " AND acquisition_period_start = '" + colaboradorVacationDto.getInicioPeriodoAquisitivo().format(dtf) + "' " +
                         " AND id NOT IN (SELECT vi.vacation_id " +
-                        "FROM vacation_items vi " +
-                        "WHERE vi.updated_at < (current_date - integer '" + intIgnorarDiasPendenteNaIntegracao + "'))";
+                                        "FROM vacation_items vi " +
+                                        "WHERE vi.updated_at < (current_date - integer '" + intIgnorarDiasPendenteNaIntegracao + "'))";
 
                 //tenta fazer o update
                 qtdLinhasAfetadas = st.executeUpdate(sqlUpdate);

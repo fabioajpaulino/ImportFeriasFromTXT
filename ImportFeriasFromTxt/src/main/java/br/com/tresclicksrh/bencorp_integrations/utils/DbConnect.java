@@ -10,7 +10,7 @@ public class DbConnect {
     public DbConnect() {
     }
 
-    public Connection getConn(Connection connection, String ambiente) {
+    public Connection getConn(String ambiente) {
 
         try {
             String driverName = "org.postgresql.Driver";
@@ -32,7 +32,7 @@ public class DbConnect {
             //System.out.println("[DbConnect] -> " + url + "," + username + "," + password);
 
             Class.forName(driverName);
-            connection = DriverManager.getConnection(url, username, password);
+            Connection connection = DriverManager.getConnection(url, username, password);
 
             if (connection != null) {
                 status = ("STATUS--->Conectado com sucesso!");
