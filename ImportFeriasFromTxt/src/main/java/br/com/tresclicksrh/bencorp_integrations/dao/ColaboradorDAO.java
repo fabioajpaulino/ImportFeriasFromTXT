@@ -67,6 +67,7 @@ public class ColaboradorDAO {
 
         String selectUserSQL = "SELECT u.id AS user_id FROM users u " +
                 "WHERE UPPER(u.name) = UPPER('" + colaboradorVacationDto.getNome().toUpperCase()+ "')";
+        String status = "";
 
         try {
             st = conn.createStatement();
@@ -77,6 +78,7 @@ public class ColaboradorDAO {
                 //seta o user_id caso encontre o colaborador atual
                 userId = resultado.getInt("user_id");
                 colaboradorVacationDto.setTargetUserId(userId);
+                status = colaboradorVacationDto.isPeriodoVencido() ? "open" : "";
             }
 
             //cria o update de vacations se o usuário/colaborador existir e não exista vacation item dentro dos ultimos 9999 dias
@@ -84,7 +86,8 @@ public class ColaboradorDAO {
                 sqlUpdate = "UPDATE vacations " +
                         " SET days_available= " + colaboradorVacationDto.getQtdDiasRestantes() + "," +
                         " days_used= " + colaboradorVacationDto.getQtdDiasGozados() + "," +
-                        " updated_at= CURRENT_TIMESTAMP " +
+                        " updated_at= CURRENT_TIMESTAMP ," +
+                        " status= '" + status  + "' "+
                         " WHERE target_user_id = " + colaboradorVacationDto.getTargetUserId() +
                         //" AND updated_at < (current_date - interval '"+intIgnorarDiasPendenteNaIntegracao+" days') " +
                         " AND acquisition_period_start = '" + colaboradorVacationDto.getInicioPeriodoAquisitivo().format(dtf) + "' " +
@@ -115,7 +118,7 @@ public class ColaboradorDAO {
                     } else {
 
                         //caso não tenha férias cadastradas insere o novo período de férias
-                        String status = colaboradorVacationDto.isPeriodoVencido() ? "open" : "";
+                        status = colaboradorVacationDto.isPeriodoVencido() ? "open" : "";
 
                         String insertVacation = "INSERT INTO vacations (id, uuid, acquisition_period_start, acquisition_period_end, concessive_period_start, " +
                                 "concessive_period_end, days_available, days_used, created_at, updated_at, target_user_id, " + //solicitation_id, approved_by_manager_id, approved_by_rh_id, " +
