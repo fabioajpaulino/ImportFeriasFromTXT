@@ -93,7 +93,8 @@ public class ColaboradorDAO {
                         " AND acquisition_period_start = '" + colaboradorVacationDto.getInicioPeriodoAquisitivo().format(dtf) + "' " +
                         " AND id NOT IN (SELECT vi.vacation_id " +
                                         "FROM vacation_items vi " +
-                                        "WHERE vi.updated_at < (current_date - integer '" + intIgnorarDiasPendenteNaIntegracao + "'))";
+                                        "WHERE vi.updated_at < (current_date - integer '" + intIgnorarDiasPendenteNaIntegracao + "')" +
+                                        "AND vi.status not in ('cancelled','disapproved'))";
 
                 //tenta fazer o update
                 qtdLinhasAfetadas = st.executeUpdate(sqlUpdate);
@@ -105,6 +106,7 @@ public class ColaboradorDAO {
                     sqlBuscaVacation = "SELECT vi.vacation_id " +
                             "FROM vacation_items vi LEFT JOIN vacations v ON vi.vacation_id =v.id " +
                             " WHERE v.target_user_id = " + colaboradorVacationDto.getTargetUserId() +
+                            " AND vi.status not in ('cancelled','disapproved') " +
                             " AND vi.updated_at < (current_date - integer '" + (intIgnorarDiasPendenteNaIntegracao) + "') ";
 
                     resultado = st.executeQuery(sqlBuscaVacation);
